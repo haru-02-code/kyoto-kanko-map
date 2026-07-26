@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>京都市観光マップ</title>
+    <!-- The callback parameter is required, so we use console.debug as a noop -->
+    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAKLjisxFelKwIl1_G6MiEO9-ya7Twr5s&callback=console.debug&libraries=maps,marker&v=beta">
+    </script>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+
+      /* Optional: Makes the sample page fill the window. */
+      /* infoPanelは画面右側3分の1ぐらいの領域に表示 */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #container {
+        display: flex;
+        height: 100vh;
+        gap: 12%;
+      }
+      
+      #map {
+        flex: 1;
+        height:60%;
+        top: 20%;
+        left: 10%;
+      }
+      #infoPanel {
+        flex: 1;
+        height: 60%;
+        top: 20%;
+        left: 10%;
+        padding: 20px;
+        box-sizing: border-box;
+        overflow-y: auto;
+      }
+      
+    </style>
+  </head>
+  <body>
+    <div id="container">
+        <div id="map"></div>
+        <div id="infoPanel"></div>
+    </div>
+    <script>
+      function initMap() {
+
+        var map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 12,
+        //   center: { lat: 34.985868163552425, lng: 135.75925131921733 },
+          //少し上   
+          center: { lat: 35.00237740861611, lng: 135.75994518103877 },
+          zoomControl: true,
+          mapTypeControl: true,
+          streetViewControl: false
+        });
+
+        var locations = [
+          { name: "清水寺", lat: 34.994677123985994, lng: 135.7846516225706, description: "清水寺は、京都市東山区にある仏教寺院で、世界遺産にも登録されています。清水の舞台からの眺めは絶景で、四季折々の風景を楽しむことができます。", image: "images/kiyomizu.jpg" },
+          { name: "金閣寺", lat: 35.03936375143542, lng: 135.72924989651528, description: "金閣寺は、京都市の東山区にある仏教寺院で、世界遺産にも登録されています。金箔で貼られた閣楼は、美しい景色を提供します。", image: "images/kinkakuji.jpg" },
+          { name: "東寺", lat: 34.98035032824021, lng: 135.747828777506, description: "東寺は、京都市南区にある仏教寺院で、世界遺産にも登録されています。五重塔が有名で、歴史的な建造物や庭園も見どころです。", image: "images/toji.png" },
+          { name: "嵐山竹林の小径", lat: 35.01687917925818, lng: 135.6717089714992 },
+          { name: "渡月橋", lat: 35.0131388956214, lng: 135.678360003224 },
+          { name: "八坂神社", lat: 35.00426903007532, lng: 135.7794856984602 },
+          { name: "龍安寺", lat: 35.03613460556539, lng: 135.7174155142858 },
+          { name: "ニデック京都タワー", lat: 34.98813552214272, lng: 135.76084344652364 },
+          { name: "伏見稲荷大社", lat: 34.96790896165558, lng: 135.7798303336085 }
+        ];
+
+        locations.forEach(function(loc) {
+          var marker = new google.maps.Marker({
+            position: { lat: loc.lat, lng: loc.lng },
+            map: map, 
+            title: loc.name
+          });
+
+          var infoWindow = new google.maps.InfoWindow({
+            content: "<h3>"+loc.name+"</h3>"
+          });
+        
+          marker.addListener("click", function() {
+            infoWindow.open(map, marker);
+            infoPanel.innerHTML = "<h2>"+loc.name+"</h2><p>"+loc.description+"</p><img src='"+loc.image+"' alt='"+loc.name+"' style='width:100%;max-width:400px;'>";
+          });
+
+          // マップのマーカーをクリックしたら右のウィンドウが場所ごとに切り替わる部分を実装したい
+          // ロケーションの配列に画像と説明を追加
+          // マーカーをクリックしたら右のウィンドウにその場所の画像と説明を表示するようにする
+          // 
+
+
+        });
+
+      }
+
+      initMap()
+        
+    </script>
+  </body>
+</html>
