@@ -5,22 +5,98 @@
     <!-- The callback parameter is required, so we use console.debug as a noop -->
     <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAKLjisxFelKwIl1_G6MiEO9-ya7Twr5s&callback=console.debug&libraries=maps,marker&v=beta">
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol&family=Noto+Serif+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <style>
-      /* Always set the map height explicitly to define the size of the div
-       * element that contains the map. */
-
-      /* Optional: Makes the sample page fill the window. */
-      /* infoPanelは画面右側3分の1ぐらいの領域に表示 */
       html,
       body {
         height: 100%;
         margin: 0;
         padding: 0;
+        font-family: "Noto Serif JP", serif;
+        background-color: #f2ead9;
+        background-image:
+          radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 50%),
+          radial-gradient(circle at 80% 70%, rgba(255,255,255,0.3) 0%, transparent 50%),
+          radial-gradient(circle at 50% 50%, rgba(200,180,140,0.15) 0%, transparent 70%);
+        background-attachment: fixed;
+        overflow-x: hidden;
+      }
+      #momijiBackground {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .momijiLeaf {
+        position: absolute;
+        top: -60px;
+        will-change: transform;
+        animation-name: momijiFall;
+        animation-timing-function: linear;
+        animation-fill-mode: forwards;
+      }
+      @keyframes momijiFall {
+        0% {
+          transform: translateY(0) translateX(0) rotate(0deg);
+        }
+        50% {
+          transform: translateY(50vh) translateX(30px) rotate(180deg);
+        }
+        100% {
+          transform: translateY(110vh) translateX(-20px) rotate(360deg);
+        }
+      }
+      #bgmToggle {
+        position: fixed;
+        bottom: 40px;
+        left: 40px;
+        z-index: 2;               
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #8a7a6a;
+        border-radius: 50%;    
+        background-color: rgba(255, 255, 255, 0.75);
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      #bgmToggle:hover {
+        background-color: rgba(255, 255, 255, 0.95);
+      }
+      #bgmToggle i {
+        font-size: 16px;
+      }
+      #pageTitle {
+        position: absolute;
+        top: 20px;
+        left: 10%;
+        margin: 0;
+        font-family: "Kaisei Decol", serif;
+        text-align: center;
+        font-size: 40px;
+        color: #3a2e2a;
+        letter-spacing: 0.15em;
+        margin: 30px 0 20px 0;
+        text-shadow: 1px 1px 2px rgba(255,255,255,0.6);
       }
       #container {
         display: flex;
         height: 100vh;
         gap: 12%;
+        justify-content: center;
+        z-index: 1;
       }
       
       #map {
@@ -31,74 +107,203 @@
       }
       #infoPanel {
         flex: 1;
-        height: 60%;
-        top: 20%;
-        left: 10%;
-        padding: 20px;
+        height: 100%;
+        padding: 20px 150px 20px 20px;
         box-sizing: border-box;
         overflow-y: auto;
+        position: relative;  
+      }
+      .panelLayer {
+        position: absolute;
+        top: 100px;
+        left: 20px;
+        right: 150px;
+        display: flex;
+        flex-direction: column;
+      }
+      .panelLayer h2 {
+        font-family: "Kaisei Decol", serif;
+        font-size: 28px;
+        color: #3a2e2a;
+        letter-spacing: 0.05em;
+        height: 40px;        
+        margin: 0 0 10px 0;
+        flex-shrink: 0;     
+      }
+      .panelLayer p {
+        font-family: "Noto Serif JP", serif;
+        font-size: 15px;
+        line-height: 1.8;
+        color: #4a4a4a;
+        height: 150px;       
+        margin: 0 0 10px 0;
+        overflow-y: auto;   
+        flex-shrink: 0;
+      }
+      .panelLayer img {
+        width: 100%;
+        height: 300px;       
+        object-fit: cover;    
+        flex-shrink: 0;
+      }
+      #guideLayer {
+        top: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center; 
+        align-items: center;      
+      }
+
+      .guideText {
+        font-family: "Noto Serif JP", serif;
+        font-size: 17px;
+        line-height: 2;
+        color: #8a7a6a;
+        text-align: center;
+        margin: 0;             
       }
       
     </style>
   </head>
   <body>
+    <div id="momijiBackground"></div>
+    <audio id="bgm" src="audio/mysterious-kyouto.mp3" loop></audio>
+    <button id="bgmToggle"><i class="fa-solid fa-play" style="color: rgb(84, 68, 68);"></i></button>
+    <h1 id="pageTitle">京都 観光名所めぐり</h1>
     <div id="container">
         <div id="map"></div>
-        <div id="infoPanel"></div>
+        <div id="infoPanel">
+          <div class="panelLayer" id="guideLayer">
+            <p class="guideText">地図上のマーカーをクリックしてください</p>
+          </div>
+        </div>
     </div>
     <script>
-      function initMap() {
+      async function initMap() {
 
-        var map = new google.maps.Map(document.getElementById("map"), {
+        const { Map } = await google.maps.importLibrary("maps");
+        const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+
+        var map = new Map(document.getElementById("map"), {
           zoom: 12,
-        //   center: { lat: 34.985868163552425, lng: 135.75925131921733 },
-          //少し上   
-          center: { lat: 35.00237740861611, lng: 135.75994518103877 },
+          center: { lat: 35.0138581142199, lng: 135.74010760985968 },
           zoomControl: true,
           mapTypeControl: true,
-          streetViewControl: false
+          streetViewControl: false,
+          mapId: "DEMO_MAP_ID"
         });
 
-        var locations = [
-          { name: "清水寺", lat: 34.994677123985994, lng: 135.7846516225706, description: "清水寺は、京都市東山区にある仏教寺院で、世界遺産にも登録されています。清水の舞台からの眺めは絶景で、四季折々の風景を楽しむことができます。", image: "images/kiyomizu.jpg" },
-          { name: "金閣寺", lat: 35.03936375143542, lng: 135.72924989651528, description: "金閣寺は、京都市の東山区にある仏教寺院で、世界遺産にも登録されています。金箔で貼られた閣楼は、美しい景色を提供します。", image: "images/kinkakuji.jpg" },
-          { name: "東寺", lat: 34.98035032824021, lng: 135.747828777506, description: "東寺は、京都市南区にある仏教寺院で、世界遺産にも登録されています。五重塔が有名で、歴史的な建造物や庭園も見どころです。", image: "images/toji.png" },
-          { name: "嵐山竹林の小径", lat: 35.01687917925818, lng: 135.6717089714992 },
-          { name: "渡月橋", lat: 35.0131388956214, lng: 135.678360003224 },
-          { name: "八坂神社", lat: 35.00426903007532, lng: 135.7794856984602 },
-          { name: "龍安寺", lat: 35.03613460556539, lng: 135.7174155142858 },
-          { name: "ニデック京都タワー", lat: 34.98813552214272, lng: 135.76084344652364 },
-          { name: "伏見稲荷大社", lat: 34.96790896165558, lng: 135.7798303336085 }
-        ];
+        // JSONファイルを読み込む(jQueryの$.getJSONを使用)
+        $.getJSON("locations.json", function(locations) {
 
-        locations.forEach(function(loc) {
-          var marker = new google.maps.Marker({
-            position: { lat: loc.lat, lng: loc.lng },
-            map: map, 
-            title: loc.name
+          $.each(locations, function(index, loc) {
+
+            var wrapper = $("<div></div>").css({
+              width: "0px",
+              height: "0px"
+            });
+
+            var img = $("<img>").attr({
+              src: loc.image,
+              alt: loc.name
+            }).css({
+              position: "absolute",
+              left: "0px",
+              top: "0px",
+              transform: "translate(-50%, -50%)",
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              border: "3px solid white",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+              objectFit: "cover",
+              cursor: "pointer"
+            });
+
+            wrapper.append(img);
+
+            var marker = new AdvancedMarkerElement({
+              position: { lat: loc.lat, lng: loc.lng },
+              map: map,
+              title: loc.name,
+              content: wrapper[0]
+            });
+
+            marker.addListener("click", function() {
+              var pos = loc.imagePosition ? loc.imagePosition : "center";
+
+              var newLayer = $(
+                "<div class='panelLayer' style='opacity:0;'>" +
+                "<h2>" + loc.name + "</h2>" +
+                "<p>" + loc.description + "</p>" +
+                "<img src='" + loc.image + "' alt='" + loc.name + "' style='object-position:" + pos + ";'>" +
+                "</div>"
+              );
+
+              var oldLayers = $("#infoPanel .panelLayer");
+
+              $("#infoPanel").append(newLayer);
+
+              oldLayers.animate({ opacity: 0 }, 500, function() {
+                $(this).remove();
+              });
+              newLayer.animate({ opacity: 1 }, 500);
+            });
+
           });
-
-          var infoWindow = new google.maps.InfoWindow({
-            content: "<h3>"+loc.name+"</h3>"
-          });
-        
-          marker.addListener("click", function() {
-            infoWindow.open(map, marker);
-            infoPanel.innerHTML = "<h2>"+loc.name+"</h2><p>"+loc.description+"</p><img src='"+loc.image+"' alt='"+loc.name+"' style='width:100%;max-width:400px;'>";
-          });
-
-          // マップのマーカーをクリックしたら右のウィンドウが場所ごとに切り替わる部分を実装したい
-          // ロケーションの配列に画像と説明を追加
-          // マーカーをクリックしたら右のウィンドウにその場所の画像と説明を表示するようにする
-          // 
-
 
         });
 
       }
 
       initMap()
-        
+
+      var momijiImages = [
+        "images/momiji_illust1.png"
+        ,"images/momiji_illust2.png" 
+      ];
+
+      function spawnMomijiLeaf() {
+        var src = momijiImages[Math.floor(Math.random() * momijiImages.length)];
+
+        var startLeft = Math.random() * 100;    
+        var size = 25 + Math.random() * 25;    
+        var duration = 8 + Math.random() * 6;        
+
+        var leaf = $("<img>")
+          .addClass("momijiLeaf")
+          .attr("src", src)
+          .css({
+            left: startLeft + "%",
+            width: size + "px",
+            height: "auto",
+            opacity: 0.85,
+            animationDuration: duration + "s"
+          });
+
+        $("#momijiBackground").append(leaf);
+
+        setTimeout(function() {
+          leaf.remove();
+        }, duration * 1000 + 200);
+      }
+
+      setInterval(spawnMomijiLeaf, 400);
+
+      // BGMの再生・停止トグル
+      var bgm = document.getElementById("bgm");
+      var isPlaying = false;
+
+      $("#bgmToggle").on("click", function() {
+        if (isPlaying) {
+          bgm.pause();
+          $(this).html('<i class="fa-solid fa-play" style="color: rgb(84, 68, 68);"></i>');
+        } else {
+          bgm.play();
+          $(this).html('<i class="fa-solid fa-stop" style="color: rgb(84, 68, 68);"></i>');
+        }
+        isPlaying = !isPlaying;
+      });
     </script>
   </body>
 </html>
